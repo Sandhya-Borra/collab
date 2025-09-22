@@ -1,2 +1,189 @@
 # collab
 working on common project
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Health Monitoring Dashboard</title>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #38bdf8;
+      margin-bottom: 10px;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .card h2 {
+      margin: 0 0 12px 0;
+      font-size: 1.2rem;
+      color: #fbbf24;
+    }
+    canvas {
+      width: 100% !important;
+      height: 250px !important;
+    }
+    .alert {
+      background: #dc2626;
+      padding: 8px;
+      margin-top: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      text-align: center;
+      display: none;
+    }
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 12px;
+    }
+    button {
+      background: #38bdf8;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover { background: #0ea5e9; }
+    footer {
+      margin-top: 20px;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Smart Health Monitoring Dashboard</h1>
+
+  <div class="dashboard">
+    <div class="card">
+      <h2>Heart Rate (BPM)</h2>
+      <canvas id="heartChart"></canvas>
+      <div id="heartAlert" class="alert">⚠️ Abnormal Heart Rate!</div>
+    </div>
+    <div class="card">
+      <h2>Body Temperature (°C)</h2>
+      <canvas id="tempChart"></canvas>
+      <div id="tempAlert" class="alert">⚠️ Temperature Out of Range!</div>
+    </div>
+    <div class="card">
+      <h2>Oxygen Level (SpO₂ %)</h2>
+      <canvas id="oxygenChart"></canvas>
+      <div id="oxyAlert" class="alert">⚠️ Low Oxygen Level!</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="simulateData()">Simulate Data</button>
+    <button onclick="stopSimulation()">Stop Simulation</button>
+    <button onclick="manualInput()">Add Manual Reading</button>
+  </div>
+
+  <footer>Prototype – Replace simulated values with real wearable data APIs</footer>
+
+  <script>
+    // Setup charts
+    function createChart(ctx, label, color) {
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label,
+            borderColor: color,
+            backgroundColor: color,
+            data: [],
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { x: { display: false }, y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    const heartChart = createChart(document.getElementById("heartChart"), "BPM", "#f87171");
+    const tempChart = createChart(document.getElementById("tempChart"), "°C", "#fbbf24");
+    const oxygenChart = createChart(document.getElementById("oxygenChart"), "%", "#34d399");
+
+    let simulationInterval;
+
+    function addData(chart, value) {
+      const now = new Date().toLocaleTimeString();
+      chart.data.labels.push(now);
+      chart.data.datasets[0].data.push(value);
+      if (chart.data.labels.length > 10) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
+      }
+      chart.update();
+    }
+
+    function checkAlerts(hr, temp, oxy) {
+      document.getElementById("heartAlert").style.display = (hr < 50 || hr > 120) ? "block" : "none";
+      document.getElementById("tempAlert").style.display = (temp < 36 || temp > 38) ? "block" : "none";
+      document.getElementById("oxyAlert").style.display = (oxy < 92) ? "block" : "none";
+    }
+
+    function simulateData() {
+      if (simulationInterval) return;
+      simulationInterval = setInterval(() => {
+        const hr = Math.floor(Math.random() * (130 - 60) + 60);
+        const temp = (Math.random() * (38.5 - 35.5) + 35.5).toFixed(1);
+        const oxy = Math.floor(Math.random() * (99 - 88) + 88);
+
+        addData(heartChart, hr);
+        addData(tempChart, temp);
+        addData(oxygenChart, oxy);
+
+        checkAlerts(hr, temp, oxy);
+      }, 2000);
+    }
+
+    function stopSimulation() {
+      clearInterval(simulationInterval);
+      simulationInterval = null;
+    }
+
+    function manualInput() {
+      const hr = parseInt(prompt("Enter Heart Rate (BPM):"), 10);
+      const temp = parseFloat(prompt("Enter Body Temperature (°C):"));
+      const oxy = parseInt(prompt("Enter Oxygen Level (SpO₂ %):"), 10);
+
+      if (!isNaN(hr) && !isNaN(temp) && !isNaN(oxy)) {
+        addData(heartChart, hr);
+        addData(tempChart, temp);
+        addData(oxygenChart, oxy);
+        checkAlerts(hr, temp, oxy);
+      }
+    }
+  </script>
+</body>
+</html>
